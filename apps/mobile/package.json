@@ -1,0 +1,12 @@
+{
+  "name": "life-os-mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "private": true,
+  "dependencies": {
+    "@life-os/ai": "1.0.0",
+    "@life-os/core": "1.0.0",
+    "@life-os/types": "1.0.0",
+    "@life-os/ui": "1.0.0"
+  }
+}
