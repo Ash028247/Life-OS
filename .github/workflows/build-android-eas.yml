@@ -1,0 +1,73 @@
+name: Build Android APK with EAS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install Expo CLI and EAS CLI
+        run: |
+          npm install -g expo-cli
+          npm install -g eas-cli
+
+      - name: Login to Expo
+        run: npx expo login -u ${{ secrets.EXPO_USERNAME }} -p ${{ secrets.EXPO_PASSWORD }} || echo "Expo login skipped"
+        env:
+          EXPO_CLI_PASSWORD: ${{ secrets.EXPO_PASSWORD }}
+
+      - name: Configure EAS
+        run: |
+          mkdir -p ~/.eas
+          echo "{\"auth\":{\"token\":\"${{ secrets.EAS_TOKEN }}\"}}" > ~/.eas/cli.json
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+
+      - name: Install EAS build dependencies
+        run: npx eas build:init --platform android
+
+      - name: Configure eas.json
+        run: |
+          cat > eas.json << 'EOF'
+          {
+            "build": {
+              "android": {
+                "buildType": "apk"
+              }
+            }
+          }
+          EOF
+
+      - name: Build Android APK with EAS
+        run: npx eas build --platform android --profile development
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+
+      - name: Download build
+        run: npx eas build:download --platform android --latest
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: life-os-apk-eas
+          path: "*.apk"
+          retention-days: 7
